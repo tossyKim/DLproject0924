@@ -165,7 +165,8 @@ public class MainController {
                 .orElse("Guest");
         model.addAttribute("username", username);
 
-        boolean isCreator = authentication != null && authentication.getName().equals(team.getManagerUsername());
+        boolean isCreator = authentication != null &&
+                authentication.getName().equals(team.getManagerUsername());
         model.addAttribute("isCreator", isCreator);
 
         return "projects";
@@ -273,5 +274,35 @@ public class MainController {
                 .header(HttpHeaders.CONTENT_DISPOSITION,
                         "attachment; filename=\"" + submission.getFileName() + "\"")
                 .body(new ByteArrayResource(submission.getFileData()));
+    }
+    /** 팀장용 제출물 확인 페이지 */
+    @GetMapping("/projects/{teamId}/submissions")
+    public String viewSubmissions(@PathVariable Long teamId,
+                                  @RequestParam Long assignmentId,
+                                  Authentication authentication,
+                                  Model model) {
+
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new IllegalStateException("팀을 찾을 수 없습니다."));
+
+        Assignment assignment = assignmentRepository.findById(assignmentId)
+                .orElseThrow(() -> new IllegalStateException("과제를 찾을 수 없습니다."));
+
+        // 팀장 확인
+        boolean isCreator = authentication != null &&
+                authentication.getName().equals(team.getManagerUsername());
+
+        if (!isCreator) {
+            // 팀장이 아니면 접근 금지
+            throw new IllegalStateException("팀장만 제출물을 볼 수 있습니다.");
+        }
+
+        List<Submission> submissions = submissionRepository.findByAssignmentId(assignmentId);
+
+        model.addAttribute("team", team);
+        model.addAttribute("assignment", assignment);
+        model.addAttribute("submissions", submissions);
+
+        return "project_submissions"; // 새 HTML 파일
     }
 }

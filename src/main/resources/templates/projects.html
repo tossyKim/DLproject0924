@@ -52,13 +52,15 @@
 <body>
 <header>
     <h1 th:text="${team.name} + ' 과제'">팀 과제</h1>
+    <span style="margin-left: 1rem; color: #fff; font-weight: bold;">
+        팀 ID: <span th:text="${team.id}">1</span>
+    </span>
     <nav>
         <span class="user-info" sec:authorize="isAuthenticated()" th:text="'안녕하세요, ' + ${username} + '님'">사용자</span>
         <a th:href="@{/logout}">로그아웃</a>
         <a th:href="@{/main}">메인</a>
     </nav>
 </header>
-
 <main>
     <div class="btn-container">
         <a class="btn-primary" th:href="@{/main}">← 뒤로가기</a>
@@ -80,7 +82,16 @@
         </div>
 
         <div th:each="assignment : ${assignments}">
-            <div class="project-card"
+            <!-- 팀장용 카드 -->
+            <div class="project-card" th:if="${isCreator}"
+                 th:onclick="|window.location.href='/projects/${team.id}/submissions?assignmentId=${assignment.id}'|">
+                <div class="project-deadline" th:text="${#temporals.format(assignment.deadline, 'yyyy-MM-dd HH:mm')}"></div>
+                <div class="project-name" th:text="${assignment.name}"></div>
+                <div class="project-desc" th:text="${assignment.description}"></div>
+            </div>
+
+            <!-- 팀원용 카드 -->
+            <div class="project-card" th:unless="${isCreator}"
                  th:onclick="|window.location.href='/assignments/submit?teamId=${team.id}&assignmentId=${assignment.id}'|">
                 <div class="project-deadline" th:text="${#temporals.format(assignment.deadline, 'yyyy-MM-dd HH:mm')}"></div>
                 <div class="project-name" th:text="${assignment.name}"></div>

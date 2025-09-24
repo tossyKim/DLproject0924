@@ -1,10 +1,68 @@
 <!DOCTYPE html>
-<html lang="en">
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <title>Title</title>
+  <meta charset="UTF-8">
+  <title>Project Submissions</title>
+  <link rel="stylesheet" th:href="@{/css/style.css}">
+  <style>
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 8px;
+      border: 1px solid #ccc;
+      text-align: left;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    a.download-link {
+      text-decoration: none;
+      color: #007bff;
+    }
+  </style>
 </head>
 <body>
+<h1>Project Submissions</h1>
 
+<table>
+  <thead>
+  <tr>
+    <th>제출자 이름</th>
+    <th>제출 과제</th>
+    <th>제출일</th>
+    <th>파일</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr th:each="submission : ${submissions}">
+    <!-- 제출자 이름 -->
+    <td th:text="${submission.user.name}">이름</td>
+
+    <!-- 과제 이름 -->
+    <td th:text="${submission.assignment.name}">과제명</td>
+
+    <!-- 제출일 -->
+    <td th:text="${#temporals.format(submission.submittedAt, 'yyyy-MM-dd HH:mm')}">제출일</td>
+
+    <!-- 파일 다운로드 -->
+<!--    <td>-->
+<!--      <a th:if="${submission.fileName != null}"-->
+<!--         th:href="@{/submission/download/{id}(id=${submission.id})}"-->
+<!--         class="download-link"-->
+<!--         th:text="${submission.fileName}">파일 다운로드</a>-->
+<!--      <span th:if="${submission.fileName == null}">파일 없음</span>-->
+<!--    </td>-->
+    <td>
+      <a th:if="${submission.fileName != null}"
+         th:href="@{/assignments/download/{id}(id=${submission.id})}"
+         class="download-link"
+         th:text="${submission.fileName}">파일 다운로드</a>
+      <span th:if="${submission.fileName == null}">파일 없음</span>
+    </td>
+  </tr>
+  </tbody>
+</table>
 </body>
 </html>

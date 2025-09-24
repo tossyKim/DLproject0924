@@ -8,11 +8,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.transaction.annotation.Transactional;
-
+import org.springframework.web.bind.annotation.*;
+import jakarta.transaction.Transactional;
 import java.util.List;
 import java.util.Optional;
 
@@ -55,7 +52,6 @@ public class MainController {
         return "main";
     }
 
-    // @Transactional 어노테이션은 메서드에만 적용합니다.
     @Transactional
     @PostMapping("/teams/save")
     public String saveTeam(@RequestParam String name,
@@ -69,28 +65,23 @@ public class MainController {
         newTeam.setName(name);
         newTeam.setDescription(description);
         newTeam.setManagerUsername(authentication.getName());
-        newTeam.setManagerName(loggedInUser.getName()); // <-- managerName 추가
+        newTeam.setManagerName(loggedInUser.getName());
         newTeam.setPassword(passwordEncoder.encode(password));
 
-        // **새로운 팀에 사용자 추가 및 사용자에도 팀 추가 - 양방향 동기화**
         newTeam.getUsers().add(loggedInUser);
         loggedInUser.getTeams().add(newTeam);
 
-        // teamRepository.save()를 호출하여 Team과 User의 관계를 저장합니다.
         teamRepository.save(newTeam);
 
-        System.out.println("새 팀 등록: " + name);
         return "redirect:/main";
     }
 
     @GetMapping("/teams/create")
     public String createTeamForm(Model model, Authentication authentication) {
-        User loggedInUser = userRepository.findByUsername(authentication.getName()).orElse(null);
-        if (loggedInUser != null) {
-            model.addAttribute("username", loggedInUser.getName());
-        } else {
-            model.addAttribute("username", "Guest");
-        }
+        String username = Optional.ofNullable(authentication)
+                .map(Authentication::getName)
+                .orElse("Guest");
+        model.addAttribute("username", username);
         return "createTeam";
     }
 
@@ -123,14 +114,30 @@ public class MainController {
             return "joinTeam";
         }
 
-        // **참가할 팀에 사용자 추가 및 사용자에도 팀 추가 - 양방향 동기화**
         teamToJoin.getUsers().add(loggedInUser);
         loggedInUser.getTeams().add(teamToJoin);
 
-        // teamRepository.save()를 호출하여 Team과 User의 관계를 저장합니다.
         teamRepository.save(teamToJoin);
 
-        System.out.println("사용자 " + loggedInUser.getUsername() + "가 팀 '" + teamToJoin.getName() + "'에 참가했습니다.");
         return "redirect:/main";
+    }
+
+    // 프로젝트 페이지 (Path Variable 방식)
+    @GetMapping("/projects/{id}")
+    public String projectsPage(@PathVariable Long id, Model model, Authentication authentication) {
+        Team team = teamRepository.findById(id)
+                .orElseThrow(() -> new IllegalStateException("팀을 찾을 수 없습니다."));
+        model.addAttribute("team", team);
+
+        String username = Optional.ofNullable(authentication)
+                .map(Authentication::getName)
+                .orElse("Guest");
+        model.addAttribute("username", username);
+
+        // ✅ 팀 생성자인지 여부 판단
+        boolean isCreator = username.equals(team.getManagerUsername());
+        model.addAttribute("isCreator", isCreator);
+
+        return "projects";
     }
 }

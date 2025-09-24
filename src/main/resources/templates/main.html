@@ -89,13 +89,11 @@
                 아직 참가한 팀이 없습니다.
             </div>
             <div th:each="team : ${teams}">
-                <!-- 팀 카드 클릭 시 projects.html로 이동, team ID는 쿼리 파라미터로 전달 -->
-                <a th:href="@{/projects(id=${team.id})}" class="team-card">
+                <!-- Path Variable 방식으로 projects/{id} 이동 -->
+                <a th:href="@{/projects/{id}(id=${team.id})}" class="team-card">
                     <span class="team-name" th:text="${team.name}">팀 이름</span>
                     <p class="team-description" th:text="${team.description}">팀 설명이 여기에 표시됩니다.</p>
-                    <span class="team-manager">
-                        팀장: <span th:text="${team.managerName}">팀장 이름</span>
-                    </span>
+                    <span class="team-manager">팀장: <span th:text="${team.managerName}">팀장</span></span>
                 </a>
             </div>
         </div>

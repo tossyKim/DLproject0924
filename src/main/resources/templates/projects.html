@@ -14,6 +14,10 @@
         header .user-info { margin-left: 1rem; font-weight: bold; }
         main { padding: 2rem; }
 
+        .btn-container { text-align: right; margin-bottom: 1rem; }
+        .btn-primary { background: #3b82f6; color: white; padding: 0.6rem 1.2rem; border-radius: 6px; text-decoration: none; font-weight: 500; transition: background 0.2s; margin-left: 0.5rem; }
+        .btn-primary:hover { background: #2563eb; }
+
         .project-card {
             display: flex; flex-direction: row; background: white;
             margin-bottom: 1rem; padding: 0.5rem 1rem;
@@ -42,10 +46,6 @@
         .project-header .project-desc { flex: 5; }
         .project-header .project-actions { padding: 0.5rem 1rem; border-right: none; }
 
-        .btn-container { text-align: right; margin-bottom: 1rem; }
-        .btn-primary { background: #3b82f6; color: white; padding: 0.6rem 1.2rem; border-radius: 6px; text-decoration: none; font-weight: 500; transition: background 0.2s; margin-left: 0.5rem; }
-        .btn-primary:hover { background: #2563eb; }
-
         footer { text-align: center; padding: 1rem; background: #e5e7eb; margin-top: 2rem; font-size: 0.9rem; }
     </style>
 </head>
@@ -53,7 +53,7 @@
 <header>
     <h1 th:text="${team.name} + ' 과제'">팀 과제</h1>
     <nav>
-        <span class="user-info" sec:authorize="isAuthenticated()" th:text="'안녕하세요, ' + ${#authentication.name} + '님'">사용자</span>
+        <span class="user-info" sec:authorize="isAuthenticated()" th:text="'안녕하세요, ' + ${username} + '님'">사용자</span>
         <a th:href="@{/logout}">로그아웃</a>
         <a th:href="@{/main}">메인</a>
     </nav>
@@ -62,8 +62,10 @@
 <main>
     <div class="btn-container">
         <a class="btn-primary" th:href="@{/main}">← 뒤로가기</a>
-        <a th:if="${isManager}" class="btn-primary" th:href="@{'/assignments/create?teamId=' + ${team.id}}">
-            ➕ 과제 게시
+
+        <!-- 팀 생성자만 과제 추가 버튼 표시 -->
+        <a th:if="${isCreator}" class="btn-primary" th:href="@{/addproject(teamId=${team.id})}">
+            ➕ 과제 추가
         </a>
     </div>
 

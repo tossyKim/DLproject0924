@@ -64,7 +64,8 @@
         <a class="btn-primary" th:href="@{/main}">← 뒤로가기</a>
 
         <!-- 팀 생성자만 과제 추가 버튼 표시 -->
-        <a th:if="${isCreator}" class="btn-primary" th:href="@{/addproject(teamId=${team.id})}">
+        <a th:if="${isCreator}" class="btn-primary"
+           th:href="@{/projects/{teamId}/add(teamId=${team.id})}">
             ➕ 과제 추가
         </a>
     </div>
@@ -79,7 +80,8 @@
         </div>
 
         <div th:each="assignment : ${assignments}">
-            <div class="project-card" th:onclick="|window.location.href='/assignments/submit?teamId=${team.id}&assignmentId=${assignment.id}'|">
+            <div class="project-card"
+                 th:onclick="|window.location.href='/assignments/submit?teamId=${team.id}&assignmentId=${assignment.id}'|">
                 <div class="project-deadline" th:text="${#temporals.format(assignment.deadline, 'yyyy-MM-dd HH:mm')}"></div>
                 <div class="project-name" th:text="${assignment.name}"></div>
                 <div class="project-desc" th:text="${assignment.description}"></div>

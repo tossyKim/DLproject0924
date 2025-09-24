@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8">
-  <title>프로젝트 추가</title>
+  <title th:text="${team.name} + ' 프로젝트 추가'">프로젝트 추가</title>
   <style>
     body { font-family: 'Segoe UI', sans-serif; background: #f7f8fa; margin: 0; padding: 0; color: #333; }
     header { background: #3b82f6; color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
@@ -28,13 +28,13 @@
 
 <main>
   <form th:action="@{/projects/{teamId}/add(teamId=${team.id})}" method="post">
-    <input type="hidden" name="teamId" th:value="${team.id}" />
+    <!-- 팀 아이디는 이미 URL PathVariable로 전달되므로 hidden 필드는 선택 사항 -->
 
-    <label for="projectName">프로젝트명</label>
-    <input type="text" id="projectName" name="projectName" required />
+    <label for="name">프로젝트명</label>
+    <input type="text" id="name" name="name" required />
 
-    <label for="projectDescription">설명</label>
-    <textarea id="projectDescription" name="projectDescription" rows="4"></textarea>
+    <label for="description">설명</label>
+    <textarea id="description" name="description" rows="4"></textarea>
 
     <label for="deadline">마감일</label>
     <input type="datetime-local" id="deadline" name="deadline" required />

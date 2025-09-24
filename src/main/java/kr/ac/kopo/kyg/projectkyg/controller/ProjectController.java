@@ -57,7 +57,7 @@
 //        Team team = teamRepository.findById(teamId)
 //                .orElseThrow(() -> new IllegalStateException("팀을 찾을 수 없습니다."));
 //        model.addAttribute("team", team);
-//        return "addproject"; // templates/addproject.html
+//        return "addproject"; // templates/add_assignment.html
 //    }
 //
 //    // 과제 추가 처리

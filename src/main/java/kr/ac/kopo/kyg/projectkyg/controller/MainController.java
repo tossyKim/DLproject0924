@@ -1,18 +1,26 @@
 package kr.ac.kopo.kyg.projectkyg.controller;
 
 import kr.ac.kopo.kyg.projectkyg.domain.Assignment;
+import kr.ac.kopo.kyg.projectkyg.domain.Submission;
 import kr.ac.kopo.kyg.projectkyg.domain.Team;
 import kr.ac.kopo.kyg.projectkyg.domain.User;
 import kr.ac.kopo.kyg.projectkyg.repository.AssignmentRepository;
+import kr.ac.kopo.kyg.projectkyg.repository.SubmissionRepository;
 import kr.ac.kopo.kyg.projectkyg.repository.TeamRepository;
 import kr.ac.kopo.kyg.projectkyg.repository.UserRepository;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import jakarta.transaction.Transactional;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -23,15 +31,18 @@ public class MainController {
     private final UserRepository userRepository;
     private final TeamRepository teamRepository;
     private final AssignmentRepository assignmentRepository;
+    private final SubmissionRepository submissionRepository;
     private final PasswordEncoder passwordEncoder;
 
     public MainController(UserRepository userRepository,
                           TeamRepository teamRepository,
                           AssignmentRepository assignmentRepository,
+                          SubmissionRepository submissionRepository,
                           PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.teamRepository = teamRepository;
         this.assignmentRepository = assignmentRepository;
+        this.submissionRepository = submissionRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -180,7 +191,6 @@ public class MainController {
         Team team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new IllegalStateException("팀을 찾을 수 없습니다."));
 
-        // 마감일 문자열을 LocalDateTime으로 변환
         LocalDateTime deadlineDateTime = LocalDateTime.parse(deadline);
 
         Assignment assignment = new Assignment();
@@ -194,29 +204,74 @@ public class MainController {
         return "redirect:/projects/" + teamId;
     }
 
+    /** 과제 제출 페이지 */
     @GetMapping("/assignments/submit")
-    public String submitProjectForm(@RequestParam Long teamId,
-                                    @RequestParam Long assignmentId,
-                                    Model model,
-                                    Authentication authentication) {
-
-        // 팀 정보
-        Team team = teamRepository.findById(teamId)
-                .orElseThrow(() -> new IllegalStateException("팀을 찾을 수 없습니다."));
-        model.addAttribute("team", team);
-
-        // 과제 정보
+    public String submitAssignmentForm(@RequestParam Long assignmentId,
+                                       @RequestParam Long teamId,
+                                       Authentication authentication,
+                                       Model model) {
         Assignment assignment = assignmentRepository.findById(assignmentId)
                 .orElseThrow(() -> new IllegalStateException("과제를 찾을 수 없습니다."));
+
+        User user = userRepository.findByUsername(authentication.getName())
+                .orElseThrow(() -> new IllegalStateException("로그인된 사용자를 찾을 수 없습니다."));
+
+        Optional<Submission> existingSubmission = submissionRepository.findByAssignmentIdAndUserId(assignmentId, user.getId());
+
         model.addAttribute("assignment", assignment);
+        model.addAttribute("teamId", teamId);
+        model.addAttribute("submission", existingSubmission.orElse(null));
 
-        // 로그인 사용자
-        String username = Optional.ofNullable(authentication)
-                .map(Authentication::getName)
-                .orElse("Guest");
-        model.addAttribute("username", username);
-
-        return "submitproject";  // submitproject.html 렌더링
+        return "submit_project";
     }
 
+    /** 과제 제출 및 수정 처리 */
+    @PostMapping("/assignments/submit")
+    @Transactional
+    public String submitAssignment(@RequestParam Long assignmentId,
+                                   @RequestParam Long teamId,
+                                   @RequestParam("file") MultipartFile file,
+                                   Authentication authentication,
+                                   Model model) throws IOException {
+
+        User user = userRepository.findByUsername(authentication.getName())
+                .orElseThrow(() -> new IllegalStateException("로그인된 사용자를 찾을 수 없습니다."));
+
+        Assignment assignment = assignmentRepository.findById(assignmentId)
+                .orElseThrow(() -> new IllegalStateException("과제를 찾을 수 없습니다."));
+
+        Optional<Submission> existingSubmission = submissionRepository.findByAssignmentIdAndUserId(assignmentId, user.getId());
+
+        Submission submission;
+        if (existingSubmission.isPresent()) {
+            submission = existingSubmission.get();
+            submission.setFileData(file.getBytes());
+            submission.setFileName(file.getOriginalFilename());
+            submission.setSubmittedAt(LocalDateTime.now());
+        } else {
+            submission = new Submission();
+            submission.setAssignment(assignment);
+            submission.setUser(user);
+            submission.setSubmittedAt(LocalDateTime.now());
+            submission.setFileData(file.getBytes());
+            submission.setFileName(file.getOriginalFilename());
+        }
+
+        submissionRepository.save(submission);
+
+        return "redirect:/assignments/submit?assignmentId=" + assignmentId + "&teamId=" + teamId;
+    }
+
+    /** 제출 파일 다운로드 */
+    @GetMapping("/assignments/download/{submissionId}")
+    public ResponseEntity<ByteArrayResource> downloadSubmission(@PathVariable Long submissionId) {
+        Submission submission = submissionRepository.findById(submissionId)
+                .orElseThrow(() -> new IllegalStateException("제출 파일을 찾을 수 없습니다."));
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + submission.getFileName() + "\"")
+                .body(new ByteArrayResource(submission.getFileData()));
+    }
 }

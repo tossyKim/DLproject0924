@@ -22,18 +22,19 @@
   <nav>
     <span th:text="${username}">사용자</span>
     <a th:href="@{/logout}">로그아웃</a>
-    <a th:href="@{/projects/} + ${team.id}">목록</a>
+    <a th:href="@{/projects/{teamId}(teamId=${team.id})}">목록</a>
   </nav>
 </header>
 
 <main>
-  <form th:action="@{/assignments/save}" method="post">
+  <form th:action="@{/projects/{teamId}/add(teamId=${team.id})}" method="post">
     <input type="hidden" name="teamId" th:value="${team.id}" />
-    <label for="name">프로젝트명</label>
-    <input type="text" id="name" name="name" required />
 
-    <label for="description">설명</label>
-    <textarea id="description" name="description" rows="4"></textarea>
+    <label for="projectName">프로젝트명</label>
+    <input type="text" id="projectName" name="projectName" required />
+
+    <label for="projectDescription">설명</label>
+    <textarea id="projectDescription" name="projectDescription" rows="4"></textarea>
 
     <label for="deadline">마감일</label>
     <input type="datetime-local" id="deadline" name="deadline" required />

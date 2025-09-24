@@ -28,7 +28,7 @@
             <div class="mb-3">
                 <label for="teamIdInput" class="form-label">참가할 팀 선택</label>
                 <!-- 사용자가 선택할 때 팀 이름은 표시, value는 팀 id -->
-                <input class="form-control" list="teamIds" id="teamIdInput" name="id" placeholder="팀 선택" required autofocus />
+                <input class="form-control" type="number" min="1" list="teamIds" id="teamIdInput" name="id" placeholder="팀 선택" required autofocus />
                 <datalist id="teamIds">
                     <option th:each="team : ${teams}" th:value="${team.id}" th:text="${team.name}"></option>
                 </datalist>

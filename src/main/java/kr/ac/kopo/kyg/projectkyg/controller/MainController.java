@@ -193,4 +193,30 @@ public class MainController {
 
         return "redirect:/projects/" + teamId;
     }
+
+    @GetMapping("/assignments/submit")
+    public String submitProjectForm(@RequestParam Long teamId,
+                                    @RequestParam Long assignmentId,
+                                    Model model,
+                                    Authentication authentication) {
+
+        // 팀 정보
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new IllegalStateException("팀을 찾을 수 없습니다."));
+        model.addAttribute("team", team);
+
+        // 과제 정보
+        Assignment assignment = assignmentRepository.findById(assignmentId)
+                .orElseThrow(() -> new IllegalStateException("과제를 찾을 수 없습니다."));
+        model.addAttribute("assignment", assignment);
+
+        // 로그인 사용자
+        String username = Optional.ofNullable(authentication)
+                .map(Authentication::getName)
+                .orElse("Guest");
+        model.addAttribute("username", username);
+
+        return "submitproject";  // submitproject.html 렌더링
+    }
+
 }

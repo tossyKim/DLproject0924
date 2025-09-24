@@ -11,8 +11,9 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 @Controller
@@ -34,21 +35,16 @@ public class MainController {
                 .map(Authentication::getName)
                 .orElse("Guest");
 
-        Optional<User> optionalUser = userRepository.findByUsername(usernameFromAuth);
-
         String displayName = "Guest";
+        List<Team> userTeams = teamRepository.findTeamsByUsername(usernameFromAuth);
+
+        Optional<User> optionalUser = userRepository.findByUsername(usernameFromAuth);
         if (optionalUser.isPresent()) {
-            User loggedInUser = optionalUser.get();
-            // findByUsernameWithTeams 대신 일반 findByUsername 사용
-            // teams 목록은 별도로 가져오거나, findByUsernameWithTeams를 사용해야 함
-            // 여기서는 이름을 가져오는 로직만 수정
-            model.addAttribute("teams", teamRepository.findAll()); // 임시로 findAll 사용
-            displayName = loggedInUser.getName();
-        } else {
-            model.addAttribute("teams", Collections.emptyList());
+            displayName = optionalUser.get().getName();
         }
 
         model.addAttribute("username", displayName);
+        model.addAttribute("teams", userTeams);
 
         boolean isManager = Optional.ofNullable(authentication)
                 .map(auth -> auth.getAuthorities().stream()
@@ -57,6 +53,34 @@ public class MainController {
         model.addAttribute("isManager", isManager);
 
         return "main";
+    }
+
+    // @Transactional 어노테이션은 메서드에만 적용합니다.
+    @Transactional
+    @PostMapping("/teams/save")
+    public String saveTeam(@RequestParam String name,
+                           @RequestParam String description,
+                           @RequestParam String password,
+                           Authentication authentication) {
+        User loggedInUser = userRepository.findByUsername(authentication.getName())
+                .orElseThrow(() -> new IllegalStateException("로그인된 사용자를 찾을 수 없습니다."));
+
+        Team newTeam = new Team();
+        newTeam.setName(name);
+        newTeam.setDescription(description);
+        newTeam.setManagerUsername(authentication.getName());
+        newTeam.setManagerName(loggedInUser.getName()); // <-- managerName 추가
+        newTeam.setPassword(passwordEncoder.encode(password));
+
+        // **새로운 팀에 사용자 추가 및 사용자에도 팀 추가 - 양방향 동기화**
+        newTeam.getUsers().add(loggedInUser);
+        loggedInUser.getTeams().add(newTeam);
+
+        // teamRepository.save()를 호출하여 Team과 User의 관계를 저장합니다.
+        teamRepository.save(newTeam);
+
+        System.out.println("새 팀 등록: " + name);
+        return "redirect:/main";
     }
 
     @GetMapping("/teams/create")
@@ -70,25 +94,43 @@ public class MainController {
         return "createTeam";
     }
 
-    @PostMapping("/teams/save")
-    public String saveTeam(@RequestParam String name,
-                           @RequestParam String description,
-                           @RequestParam String password, Authentication authentication) {
-        Team newTeam = new Team();
-        newTeam.setName(name);
-        newTeam.setDescription(description);
-        newTeam.setManagerUsername(authentication.getName());
-        newTeam.setPassword(passwordEncoder.encode(password));
+    @GetMapping("/teams/join")
+    public String joinTeamForm(Model model) {
+        List<Team> allTeams = teamRepository.findAll();
+        model.addAttribute("teams", allTeams);
+        return "joinTeam";
+    }
 
-        teamRepository.save(newTeam);
-
+    @Transactional
+    @PostMapping("/teams/join")
+    public String joinTeam(@RequestParam Long id, @RequestParam String teamPassword, Model model, Authentication authentication) {
         User loggedInUser = userRepository.findByUsername(authentication.getName())
                 .orElseThrow(() -> new IllegalStateException("로그인된 사용자를 찾을 수 없습니다."));
 
-        loggedInUser.getTeams().add(newTeam);
-        userRepository.save(loggedInUser);
+        Optional<Team> optionalTeam = teamRepository.findById(id);
 
-        System.out.println("새 팀 등록: " + name);
+        if (optionalTeam.isEmpty() || !passwordEncoder.matches(teamPassword, optionalTeam.get().getPassword())) {
+            model.addAttribute("error", "팀 정보 또는 비밀번호가 올바르지 않습니다.");
+            model.addAttribute("teams", teamRepository.findAll());
+            return "joinTeam";
+        }
+
+        Team teamToJoin = optionalTeam.get();
+
+        if (teamToJoin.getUsers().contains(loggedInUser)) {
+            model.addAttribute("error", "이미 해당 팀에 가입되어 있습니다.");
+            model.addAttribute("teams", teamRepository.findAll());
+            return "joinTeam";
+        }
+
+        // **참가할 팀에 사용자 추가 및 사용자에도 팀 추가 - 양방향 동기화**
+        teamToJoin.getUsers().add(loggedInUser);
+        loggedInUser.getTeams().add(teamToJoin);
+
+        // teamRepository.save()를 호출하여 Team과 User의 관계를 저장합니다.
+        teamRepository.save(teamToJoin);
+
+        System.out.println("사용자 " + loggedInUser.getUsername() + "가 팀 '" + teamToJoin.getName() + "'에 참가했습니다.");
         return "redirect:/main";
     }
 }

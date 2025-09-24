@@ -27,6 +27,9 @@ public class Team {
     @Column(nullable = false, length = 50)
     private String managerUsername;
 
+    @Column(nullable = false, length = 50)
+    private String managerName;
+
     @Column(nullable = false, length = 100)
     private String password;
 

@@ -2,40 +2,54 @@ package kr.ac.kopo.kyg.projectkyg.domain;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Data
+@Getter @Setter
 @NoArgsConstructor
 @Table(name = "users")
 public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id; // 메인키
+    private Long id;
 
     @Column(nullable = false, length = 50)
-    private String name; // 이름
+    private String name;
 
     @Column(nullable = false, unique = true, length = 50)
-    private String username; // 로그인 아이디 (학번)
+    private String username;
 
     @Column(nullable = false, length = 100)
-    private String password; // 비밀번호
+    private String password;
 
     @Column(nullable = false)
-    @Enumerated(EnumType.STRING) // 이 어노테이션이 핵심입니다.
-    private Role role; // enum 타입으로 변경
+    @Enumerated(EnumType.STRING)
+    private Role role;
 
-    // 다대다 관계 설정
     @ManyToMany
     @JoinTable(
-            name = "user_team", // 조인 테이블 이름
-            joinColumns = @JoinColumn(name = "user_id"), // User 엔티티의 외래키
-            inverseJoinColumns = @JoinColumn(name = "team_id") // Team 엔티티의 외래키
+            name = "user_team",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "team_id")
     )
     private Set<Team> teams = new HashSet<>();
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof User)) return false;
+        User user = (User) o;
+        return id != null && id.equals(user.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return 31;
+    }
 }

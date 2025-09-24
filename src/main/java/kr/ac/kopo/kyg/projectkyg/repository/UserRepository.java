@@ -5,15 +5,16 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
 import java.util.Optional;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
 
-    // 기존 메서드: username으로 찾기 (회원가입 중복 확인에 사용)
+    // username으로 User 찾기 (회원가입 중복 확인 등)
     Optional<User> findByUsername(String username);
 
-    // 새로운 메서드: username으로 찾으면서 관련된 팀 정보도 함께 가져옴
-    @Query("SELECT u FROM User u JOIN FETCH u.teams WHERE u.username = :username")
+    // username으로 User를 찾으면서 관련 팀 정보까지 함께 가져오기
+    @Query("SELECT u FROM User u LEFT JOIN FETCH u.teams WHERE u.username = :username")
     Optional<User> findByUsernameWithTeams(@Param("username") String username);
 }

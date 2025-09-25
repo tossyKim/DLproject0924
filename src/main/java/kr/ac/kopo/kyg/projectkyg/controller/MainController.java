@@ -208,6 +208,9 @@ public class MainController {
                 authentication.getName().equals(team.getManagerUsername());
         model.addAttribute("isCreator", isCreator);
 
+        // 현재 시각을 모델에 추가 (템플릿에서 now 사용 가능)
+        model.addAttribute("now", LocalDateTime.now());
+
         return "projects";
     }
 
@@ -222,7 +225,6 @@ public class MainController {
             throw new IllegalStateException("팀장만 팀을 해체할 수 있습니다.");
         }
 
-        // 팀에 속한 모든 사용자의 팀 리스트에서 제거
         for (User u : team.getUsers()) {
             u.getTeams().remove(team);
             userRepository.save(u);
@@ -327,11 +329,24 @@ public class MainController {
 
         Optional<Submission> existingSubmission = submissionRepository.findByAssignmentIdAndUserId(assignmentId, user.getId());
 
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime deadline = assignment.getDeadline();
+        String originalFileName = file.getOriginalFilename();
+        String finalFileName = originalFileName;
+
+        if (now.isAfter(deadline)) {
+            if (existingSubmission.isPresent()) {
+                finalFileName = "마감수정_" + originalFileName;
+            } else {
+                finalFileName = "마감제출_" + originalFileName;
+            }
+        }
+
         Submission submission;
         if (existingSubmission.isPresent()) {
             submission = existingSubmission.get();
             submission.setFileData(file.getBytes());
-            submission.setFileName(file.getOriginalFilename());
+            submission.setFileName(finalFileName);
             submission.setSubmittedAt(LocalDateTime.now());
         } else {
             submission = new Submission();
@@ -339,7 +354,7 @@ public class MainController {
             submission.setUser(user);
             submission.setSubmittedAt(LocalDateTime.now());
             submission.setFileData(file.getBytes());
-            submission.setFileName(file.getOriginalFilename());
+            submission.setFileName(finalFileName);
         }
 
         submissionRepository.save(submission);
@@ -373,7 +388,6 @@ public class MainController {
         Assignment assignment = assignmentRepository.findById(assignmentId)
                 .orElseThrow(() -> new IllegalStateException("과제를 찾을 수 없습니다."));
 
-        // 팀장 확인
         boolean isCreator = authentication != null &&
                 authentication.getName().equals(team.getManagerUsername());
 

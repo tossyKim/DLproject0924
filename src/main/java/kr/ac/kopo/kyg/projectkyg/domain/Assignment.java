@@ -31,4 +31,8 @@ public class Assignment {
     @ManyToOne
     @JoinColumn(name = "team_id", nullable = false)
     private Team team; // 과제가 속한 팀
+
+    // 제출 여부 표시용 (DB에 저장되지 않음)
+    @Transient
+    private boolean submitted = false;
 }

@@ -26,6 +26,12 @@
             transition: transform 0.2s ease, box-shadow 0.2s ease; box-sizing: border-box;
         }
         .project-card:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+
+        .project-card.past-deadline {
+            background: #e0e0e0;
+            color: #888;
+        }
+
         .project-card div { padding: 0.5rem 1rem; border-right: 1px solid #ccc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .project-card div:last-child { border-right: none; }
 
@@ -65,19 +71,12 @@
     <div class="btn-container">
         <a class="btn-primary" th:href="@{/main}">← 뒤로가기</a>
 
-        <!-- 팀 생성자만 과제 추가 버튼 표시 -->
         <a th:if="${isCreator}" class="btn-primary"
-           th:href="@{/projects/{teamId}/add(teamId=${team.id})}">
-            ➕ 과제 추가
-        </a>
+           th:href="@{/projects/{teamId}/add(teamId=${team.id})}">➕ 과제 추가</a>
 
-        <!-- 팀 생성자만 팀 수정 버튼 표시 -->
         <a th:if="${isCreator}" class="btn-primary"
-           th:href="@{/teams/{teamId}/edit(teamId=${team.id})}">
-            🛠 팀 정보 수정
-        </a>
+           th:href="@{/teams/{teamId}/edit(teamId=${team.id})}">🛠 팀 정보 수정</a>
 
-        <!-- 팀 해체 / 팀 탈퇴 버튼 (CSRF 없이) -->
         <form th:if="${isCreator}" th:action="@{/teams/{teamId}/delete(teamId=${team.id})}" method="post" style="display:inline;"
               onsubmit="return confirm('정말 팀을 해체하시겠습니까?');">
             <button type="submit" class="btn-primary">💥 팀 해체</button>
@@ -100,16 +99,20 @@
 
         <div th:each="assignment : ${assignments}">
             <!-- 팀장용 카드 -->
-            <div class="project-card" th:if="${isCreator}"
-                 th:onclick="|window.location.href='/projects/${team.id}/submissions?assignmentId=${assignment.id}'|">
+            <div class="project-card"
+                 th:classappend="${now.isAfter(assignment.deadline)} ? ' past-deadline' : ''"
+                 th:if="${isCreator}"
+                 th:onclick="'window.location.href=\'/projects/' + ${team.id} + '/submissions?assignmentId=' + ${assignment.id} + '\''">
                 <div class="project-deadline" th:text="${#temporals.format(assignment.deadline, 'yyyy-MM-dd HH:mm')}"></div>
                 <div class="project-name" th:text="${assignment.name}"></div>
                 <div class="project-desc" th:text="${assignment.description}"></div>
             </div>
 
             <!-- 팀원용 카드 -->
-            <div class="project-card" th:unless="${isCreator}"
-                 th:onclick="|window.location.href='/assignments/submit?teamId=${team.id}&assignmentId=${assignment.id}'|">
+            <div class="project-card"
+                 th:classappend="${now.isAfter(assignment.deadline)} ? ' past-deadline' : ''"
+                 th:unless="${isCreator}"
+                 th:onclick="'window.location.href=\'/assignments/submit?teamId=' + ${team.id} + '&assignmentId=' + ${assignment.id} + '\''">
                 <div class="project-deadline" th:text="${#temporals.format(assignment.deadline, 'yyyy-MM-dd HH:mm')}"></div>
                 <div class="project-name" th:text="${assignment.name}"></div>
                 <div class="project-desc" th:text="${assignment.description}"></div>

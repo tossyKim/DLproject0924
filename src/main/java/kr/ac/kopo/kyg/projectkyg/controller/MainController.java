@@ -197,7 +197,6 @@ public class MainController {
         model.addAttribute("team", team);
 
         List<Assignment> assignments = assignmentRepository.findByTeamId(id);
-        model.addAttribute("assignments", assignments);
 
         String username = Optional.ofNullable(authentication)
                 .map(Authentication::getName)
@@ -208,7 +207,19 @@ public class MainController {
                 authentication.getName().equals(team.getManagerUsername());
         model.addAttribute("isCreator", isCreator);
 
-        // 현재 시각을 모델에 추가 (템플릿에서 now 사용 가능)
+        // 현재 로그인 사용자가 제출한 과제인지 확인 후 Assignment 객체에 표시
+        Optional<User> optionalUser = userRepository.findByUsername(username);
+        if (optionalUser.isPresent()) {
+            User user = optionalUser.get();
+            for (Assignment assignment : assignments) {
+                boolean submitted = submissionRepository
+                        .findByAssignmentIdAndUserId(assignment.getId(), user.getId())
+                        .isPresent();
+                assignment.setSubmitted(submitted); // 새로운 필드로 제출 여부 표시
+            }
+        }
+
+        model.addAttribute("assignments", assignments);
         model.addAttribute("now", LocalDateTime.now());
 
         return "projects";

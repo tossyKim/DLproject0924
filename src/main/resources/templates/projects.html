@@ -37,7 +37,8 @@
 
         .project-deadline { flex: 1.5; font-weight: bold; text-align: center; }
         .project-name { flex: 1.5; font-weight: bold; }
-        .project-desc { flex: 5; }
+        .project-desc { flex: 4; }
+        .project-submission { flex: 1; font-weight: bold; text-align: center; color: #3b82f6; }
         .project-actions { padding: 0.5rem 1rem; border-right: none; }
 
         .project-header {
@@ -49,8 +50,8 @@
         .project-header div:last-child { border-right: none; }
         .project-header .project-deadline { flex: 1.5; text-align: center; }
         .project-header .project-name { flex: 1.5; }
-        .project-header .project-desc { flex: 5; }
-        .project-header .project-actions { padding: 0.5rem 1rem; border-right: none; }
+        .project-header .project-desc { flex: 4; }
+        .project-header .project-submission { flex: 1; text-align: center; }
 
         footer { text-align: center; padding: 1rem; background: #e5e7eb; margin-top: 2rem; font-size: 0.9rem; }
     </style>
@@ -95,6 +96,7 @@
             <div class="project-deadline">마감일</div>
             <div class="project-name">과제명</div>
             <div class="project-desc">설명</div>
+            <div class="project-submission" th:unless="${isCreator}">제출 상태</div>
         </div>
 
         <div th:each="assignment : ${assignments}">
@@ -116,6 +118,7 @@
                 <div class="project-deadline" th:text="${#temporals.format(assignment.deadline, 'yyyy-MM-dd HH:mm')}"></div>
                 <div class="project-name" th:text="${assignment.name}"></div>
                 <div class="project-desc" th:text="${assignment.description}"></div>
+                <div class="project-submission" th:text="${assignment.submitted} ? '✅ 제출됨' : '❌ 미제출'"></div>
             </div>
         </div>
 

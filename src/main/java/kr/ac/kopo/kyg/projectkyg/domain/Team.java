@@ -29,6 +29,7 @@ public class Team {
     @Column(nullable = false, length = 50)
     private String managerUsername;
 
+    // 🟢 요청에 따라 유지된 DB 필드
     @Column(nullable = false, length = 50)
     private String managerName;
 
@@ -45,7 +46,29 @@ public class Team {
     private List<Assignment> assignments;
     // -----------------------------
 
-    // 화면 표시용 필드: 가장 가까운 과제의 마감까지 남은 시간(시간 단위)
+    // 🟢 요청에 따라 유지된 필드 (이전 남은 시간 필드)
     @Transient
-    private long hoursUntilDeadline;
+    private Long remainingMillis;
+
+    // 🟢 미제출 과제 유무 (최신 요구 사항)
+    @Transient
+    private Boolean hasUnsubmittedAssignment;
+
+    // 🟢 팀장 여부를 판단하기 위해 추가 (MainController에서 설정됨)
+    @Transient
+    private Boolean isTeamManager;
+
+    // 🟢 MainController에서 User 객체를 설정하기 위한 임시 필드
+    @Transient
+    private User managerUser;
+
+    // 💥 MainController의 team::setManagerUser 호출 오류를 해결합니다.
+    public void setManagerUser(User managerUser) {
+        this.managerUser = managerUser;
+    }
+
+    // 💥 Thymeleaf 오류 해결 핵심: MainController에서 설정할 isTeamManager의 Setter를 추가합니다.
+    public void setIsTeamManager(Boolean isTeamManager) {
+        this.isTeamManager = isTeamManager;
+    }
 }

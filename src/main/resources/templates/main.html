@@ -54,18 +54,35 @@
 
             display: flex;
             flex-direction: column;
+            position: relative;
         }
 
         .team-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 8px 25px rgba(0,0,0,0.2);
         }
+
+        /* 👑 팀장 카드 스타일 */
+        .team-card.manager-card {
+            border: 2px solid #f97316; /* 주황색 테두리로 강조 */
+            box-shadow: 0 6px 15px rgba(249, 115, 22, 0.3); /* 강조 그림자 */
+        }
+        .team-card.manager-card .team-name {
+            color: #f97316; /* 팀 이름 색상 변경 */
+        }
+
+        /* 👑 아이콘 스타일 */
+        .manager-icon {
+            font-size: 1.1rem;
+            margin-right: 5px;
+            color: #f97316;
+        }
         .team-name { font-weight: bold; font-size: 1.1rem; }
         .team-description { margin-top: 0.5rem; color: #666; font-size: 0.9em; line-height: 1.4; }
-        .team-manager { margin-top: 0.5rem; font-weight: bold; color: #666; font-size: 0.9em; }
-        .team-deadline { margin-top: 0.5rem; font-weight: bold; color: #d97706; font-size: 0.9em; }
-
-        footer { text-align: center; padding: 1rem; background: #e5e7eb; margin-top: 2rem; font-size: 0.9rem; }
+        .team-manager { margin-top: 0.5rem; color: #666; font-size: 0.9em; }
+        .team-deadline { margin-top: 0.5rem; font-weight: bold; font-size: 0.9em; }
+        .team-deadline.urgent { color: #ef4444; } /* 미제출 과제 있음 */
+        .team-deadline.none { color: #10b981; } /* 제출 완료 */
     </style>
 </head>
 <body>
@@ -91,16 +108,29 @@
                 아직 참가한 팀이 없습니다.
             </div>
             <div th:each="team : ${teams}">
-                <!-- Path Variable 방식으로 projects/{id} 이동 -->
-                <a th:href="@{/projects/{id}(id=${team.id})}" class="team-card">
-                    <span class="team-name" th:text="${team.name}">팀 이름</span>
+                <a th:href="@{/projects/{id}(id=${team.id})}"
+                   class="team-card"
+                   th:classappend="${team.isTeamManager} ? 'manager-card' : ''">
+
+                    <span class="team-name">
+                        <span th:if="${team.isTeamManager}" class="manager-icon">👑</span>
+                        <span th:text="${team.name}">팀 이름</span>
+                    </span>
+
                     <p class="team-description" th:text="${team.description}">팀 설명이 여기에 표시됩니다.</p>
                     <span class="team-manager">팀장: <span th:text="${team.managerName}">팀장</span></span>
 
-                    <!-- 마감임박 표시 -->
-                    <span class="team-deadline" th:if="${team.hoursUntilDeadline >= 0}">
-                        ⏰ <span th:text="${team.hoursUntilDeadline}"></span>시간 후 마감
-                    </span>
+                    <th:block th:with="unsubmitted=${team.hasUnsubmittedAssignment}">
+
+                        <span class="team-deadline urgent" th:if="${unsubmitted}">
+                            ⚠️ 미제출 마감 예정 과제 있음
+                        </span>
+
+                        <span class="team-deadline none" th:unless="${unsubmitted}">
+                            ✅ 모든 마감 과제 제출 완료
+                        </span>
+
+                    </th:block>
                 </a>
             </div>
         </div>

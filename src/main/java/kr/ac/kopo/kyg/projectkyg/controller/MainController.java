@@ -23,7 +23,6 @@ import jakarta.transaction.Transactional;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -57,24 +56,33 @@ public class MainController {
                 .map(Authentication::getName)
                 .orElse("Guest");
 
+        Optional<User> optionalUser = userRepository.findByUsername(usernameFromAuth);
+
         String displayName = "Guest";
         List<Team> userTeams = teamRepository.findTeamsByUsername(usernameFromAuth);
 
-        Optional<User> optionalUser = userRepository.findByUsername(usernameFromAuth);
+        User loggedInUser = null;
         if (optionalUser.isPresent()) {
-            displayName = optionalUser.get().getName();
+            loggedInUser = optionalUser.get();
+            displayName = loggedInUser.getName();
         }
 
-        LocalDateTime now = LocalDateTime.now();
-        for (Team team : userTeams) {
-            List<Assignment> assignments = assignmentRepository.findByTeamId(team.getId());
-            long minHours = assignments.stream()
-                    .map(a -> Duration.between(now, a.getDeadline()).toHours())
-                    .filter(hours -> hours >= 0)
-                    .min(Long::compare)
-                    .orElse(-1L);
-            team.setHoursUntilDeadline(minHours);
+        // 🟢 수정된 로직: 남은 시간 계산 대신 미제출 과제 유무 확인
+        if (loggedInUser != null) {
+            for (Team team : userTeams) {
+                // 팀장 이름 설정 (이전 수정사항 유지)
+                userRepository.findByUsername(team.getManagerUsername()).ifPresent(team::setManagerUser);
+
+                // 💥 오류 해결 및 기능 추가: 현재 사용자가 이 팀의 팀장인지 확인하여 설정합니다.
+                boolean isTeamManager = loggedInUser.getUsername().equals(team.getManagerUsername());
+                team.setIsTeamManager(isTeamManager);
+
+                // 미제출 마감 예정 과제 유무 확인
+                boolean hasUnsubmitted = hasUnsubmittedFutureAssignment(team.getId(), loggedInUser.getId());
+                team.setHasUnsubmittedAssignment(hasUnsubmitted);
+            }
         }
+        // -------------------------------------------------------------
 
         model.addAttribute("username", displayName);
         model.addAttribute("teams", userTeams);
@@ -87,6 +95,39 @@ public class MainController {
 
         return "main";
     }
+
+    /**
+     * 🟢 추가된 메서드: 특정 팀에서 현재 로그인한 사용자에게 마감 기한이 미래이며 미제출된 과제가 있는지 확인합니다.
+     */
+    private boolean hasUnsubmittedFutureAssignment(Long teamId, Long userId) {
+        LocalDateTime now = LocalDateTime.now();
+
+        // 1. 해당 팀의 모든 과제를 가져옵니다.
+        List<Assignment> assignments = assignmentRepository.findByTeamId(teamId);
+
+        if (assignments.isEmpty()) {
+            return false;
+        }
+
+        // 2. 마감 기한이 미래인 과제를 순회하며 미제출 상태인지 확인합니다.
+        for (Assignment assignment : assignments) {
+            // 마감 기한이 현재 시각보다 미래이고
+            if (assignment.getDeadline().isAfter(now)) {
+                // 해당 과제를 제출했는지 확인
+                Optional<Submission> submission = submissionRepository.findByAssignmentIdAndUserId(assignment.getId(), userId);
+
+                // 제출하지 않았다면
+                if (submission.isEmpty()) {
+                    // 미제출된 미래 과제가 발견되면 즉시 true 반환
+                    return true;
+                }
+            }
+        }
+
+        return false; // 미제출된 미래 과제가 없음
+    }
+
+    // ❌ 이전의 getNearestDeadlineMillis 메서드는 제거되었습니다.
 
     /** 팀 가입 폼 */
     @GetMapping("/teams/join")
@@ -266,6 +307,4 @@ public class MainController {
                         "attachment; filename=\"" + encodedFileName + "\"")
                 .body(new ByteArrayResource(submission.getFileData()));
     }
-
-    // 🚨 이전 충돌을 일으킨 listSubmissions 메서드는 삭제되었습니다.
 }

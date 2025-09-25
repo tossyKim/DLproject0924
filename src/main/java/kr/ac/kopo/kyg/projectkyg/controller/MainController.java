@@ -211,6 +211,51 @@ public class MainController {
         return "projects";
     }
 
+    /** 팀 해체 (팀장만 가능) */
+    @Transactional
+    @PostMapping("/teams/{id}/delete")
+    public String deleteTeam(@PathVariable Long id, Authentication authentication) {
+        Team team = teamRepository.findById(id)
+                .orElseThrow(() -> new IllegalStateException("팀을 찾을 수 없습니다."));
+
+        if (!authentication.getName().equals(team.getManagerUsername())) {
+            throw new IllegalStateException("팀장만 팀을 해체할 수 있습니다.");
+        }
+
+        // 팀에 속한 모든 사용자의 팀 리스트에서 제거
+        for (User u : team.getUsers()) {
+            u.getTeams().remove(team);
+            userRepository.save(u);
+        }
+
+        teamRepository.delete(team);
+
+        return "redirect:/main";
+    }
+
+    /** 팀 탈퇴 (팀원만 가능) */
+    @Transactional
+    @PostMapping("/teams/{id}/leave")
+    public String leaveTeam(@PathVariable Long id, Authentication authentication) {
+        Team team = teamRepository.findById(id)
+                .orElseThrow(() -> new IllegalStateException("팀을 찾을 수 없습니다."));
+
+        User user = userRepository.findByUsername(authentication.getName())
+                .orElseThrow(() -> new IllegalStateException("로그인된 사용자를 찾을 수 없습니다."));
+
+        if (user.getUsername().equals(team.getManagerUsername())) {
+            throw new IllegalStateException("팀장은 탈퇴할 수 없습니다. 팀을 해체하세요.");
+        }
+
+        team.getUsers().remove(user);
+        user.getTeams().remove(team);
+
+        teamRepository.save(team);
+        userRepository.save(user);
+
+        return "redirect:/main";
+    }
+
     /** 과제 추가 페이지 폼 */
     @GetMapping("/projects/{teamId}/add")
     public String addAssignmentForm(@PathVariable Long teamId, Model model) {

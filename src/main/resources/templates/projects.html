@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <title th:text="${team.name} + ' 과제'">팀 과제</title>
     <style>
+        /* (스타일은 변경 없음) */
         body { font-family: 'Segoe UI', sans-serif; background: #f7f8fa; margin: 0; padding: 0; color: #333; }
         header { background: #3b82f6; color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
         header h1 { margin: 0; }
@@ -17,6 +18,10 @@
         .btn-container { text-align: right; margin-bottom: 1rem; }
         .btn-primary { background: #3b82f6; color: white; padding: 0.6rem 1.2rem; border-radius: 6px; text-decoration: none; font-weight: 500; transition: background 0.2s; margin-left: 0.5rem; border: none; cursor: pointer; }
         .btn-primary:hover { background: #2563eb; }
+
+        /* 새로 추가: 삭제 버튼 스타일 */
+        .btn-danger { background: #ef4444; color: white; padding: 0.4rem 0.8rem; border-radius: 4px; text-decoration: none; font-weight: 500; transition: background 0.2s; border: none; cursor: pointer; font-size: 0.8rem; }
+        .btn-danger:hover { background: #dc2626; }
 
         .project-card {
             display: flex; flex-direction: row; background: white;
@@ -32,14 +37,15 @@
             color: #888;
         }
 
+        /* 칼럼 너비 조정 */
         .project-card div { padding: 0.5rem 1rem; border-right: 1px solid #ccc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .project-card div:last-child { border-right: none; }
 
         .project-deadline { flex: 1.5; font-weight: bold; text-align: center; }
         .project-name { flex: 1.5; font-weight: bold; }
-        .project-desc { flex: 4; }
+        .project-desc { flex: 3; }
         .project-submission { flex: 1; font-weight: bold; text-align: center; color: #3b82f6; }
-        .project-actions { padding: 0.5rem 1rem; border-right: none; }
+        .project-actions { flex: 1.5; text-align: center; border-right: none; padding: 0.5rem 0.5rem; }
 
         .project-header {
             display: flex; flex-direction: row; background: #e0e7ff;
@@ -50,8 +56,9 @@
         .project-header div:last-child { border-right: none; }
         .project-header .project-deadline { flex: 1.5; text-align: center; }
         .project-header .project-name { flex: 1.5; }
-        .project-header .project-desc { flex: 4; }
+        .project-header .project-desc { flex: 3; }
         .project-header .project-submission { flex: 1; text-align: center; }
+        .project-header .project-actions { flex: 1.5; text-align: center; }
 
         footer { text-align: center; padding: 1rem; background: #e5e7eb; margin-top: 2rem; font-size: 0.9rem; }
     </style>
@@ -99,30 +106,41 @@
             <div class="project-deadline">마감일</div>
             <div class="project-name">과제명</div>
             <div class="project-desc">설명</div>
-            <div class="project-submission" th:unless="${isCreator}">제출 상태</div>
+            <div th:if="${isCreator}" class="project-actions">액션</div>
+            <div th:unless="${isCreator}" class="project-submission">제출 상태</div>
         </div>
 
         <div th:each="assignment : ${assignments}">
-            <!-- 팀장용 카드 -->
-            <div class="project-card"
-                 th:classappend="${now.isAfter(assignment.deadline)} ? ' past-deadline' : ''"
-                 th:if="${isCreator}"
-                 th:onclick="'window.location.href=\'/projects/' + ${team.id} + '/submissions?assignmentId=' + ${assignment.id} + '\''">
+            <a class="project-card"
+               th:classappend="${now.isAfter(assignment.deadline)} ? ' past-deadline' : ''"
+               th:if="${isCreator}"
+               th:href="@{/projects/{teamId}/assignments/{assignmentId}/submissions(teamId=${team.id}, assignmentId=${assignment.id})}"
+               style="cursor:pointer;">
                 <div class="project-deadline" th:text="${#temporals.format(assignment.deadline, 'yyyy-MM-dd HH:mm')}"></div>
                 <div class="project-name" th:text="${assignment.name}"></div>
                 <div class="project-desc" th:text="${assignment.description}"></div>
-            </div>
 
-            <!-- 팀원용 카드 -->
-            <div class="project-card"
-                 th:classappend="${now.isAfter(assignment.deadline)} ? ' past-deadline' : ''"
-                 th:unless="${isCreator}"
-                 th:onclick="'window.location.href=\'/assignments/submit?teamId=' + ${team.id} + '&assignmentId=' + ${assignment.id} + '\''">
+                <div class="project-actions"
+                     onclick="event.stopPropagation();">
+                    <form th:action="@{/projects/{teamId}/assignments/{assignmentId}/delete(teamId=${team.id}, assignmentId=${assignment.id})}"
+                          method="post" style="display:inline;"
+                          onsubmit="event.stopPropagation(); return confirm('과제를 삭제하면 모든 제출물도 삭제됩니다. 정말 삭제하시겠습니까?');">
+                        <button type="submit" class="btn-danger">🗑 삭제</button>
+                    </form>
+                </div>
+            </a>
+
+            <a class="project-card"
+               th:classappend="${now.isAfter(assignment.deadline)} ? ' past-deadline' : ''"
+               th:unless="${isCreator}"
+               th:href="@{/assignments/{assignmentId}/submit(assignmentId=${assignment.id})}"
+               th:onclick="|return !${now.isAfter(assignment.deadline)} || confirm('마감일이 지났습니다. 그래도 제출하시겠습니까?')|"
+               style="cursor:pointer;">
                 <div class="project-deadline" th:text="${#temporals.format(assignment.deadline, 'yyyy-MM-dd HH:mm')}"></div>
                 <div class="project-name" th:text="${assignment.name}"></div>
                 <div class="project-desc" th:text="${assignment.description}"></div>
                 <div class="project-submission" th:text="${assignment.submitted} ? '✅ 제출됨' : '❌ 미제출'"></div>
-            </div>
+            </a>
         </div>
 
         <div th:if="${assignments == null or #lists.isEmpty(assignments)}" style="margin-top:1rem; color:#666;">

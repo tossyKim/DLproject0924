@@ -1,12 +1,12 @@
 package kr.ac.kopo.kyg.projectkyg.domain;
 
 import jakarta.persistence.*;
-import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Getter
@@ -31,6 +31,12 @@ public class Assignment {
     @ManyToOne
     @JoinColumn(name = "team_id", nullable = false)
     private Team team; // 과제가 속한 팀
+
+    // -----------------------------
+    // Assignment와 Submission의 1:N 관계
+    @OneToMany(mappedBy = "assignment", cascade = CascadeType.REMOVE)
+    private List<Submission> submissions;
+    // -----------------------------
 
     // 제출 여부 표시용 (DB에 저장되지 않음)
     @Transient

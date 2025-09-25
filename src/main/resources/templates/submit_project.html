@@ -18,6 +18,8 @@
     .file-link { margin-top: 1rem; padding: 0.8rem; background: #f1f5f9; border-radius: 6px; }
     .file-link a { color: #3b82f6; text-decoration: none; font-weight: bold; }
     .file-link a:hover { text-decoration: underline; }
+    .message { padding: 10px; margin-bottom: 1rem; border-radius: 4px; background-color: #d1e7dd; color: #0f5132; border: 1px solid #badbcc; }
+    .error { padding: 10px; margin-bottom: 1rem; border-radius: 4px; background-color: #f8d7da; color: #842029; border: 1px solid #f5c2c7; }
   </style>
 </head>
 <body>
@@ -31,36 +33,39 @@
 </header>
 
 <main>
+  <div th:if="${message}" class="message" th:text="${message}"></div>
+  <div th:if="${error}" class="error" th:text="${error}"></div>
+
   <div class="assignment-info">
     <h2 th:text="${assignment.name}"></h2>
     <p th:text="${assignment.description}"></p>
     <p><strong>마감일:</strong>
       <span th:text="${#temporals.format(assignment.deadline, 'yyyy-MM-dd HH:mm')}"></span>
     </p>
+    <p th:if="${submission != null}">
+      <strong>최종 제출 일시:</strong>
+      <span th:text="${#temporals.format(submission.submittedAt, 'yyyy-MM-dd HH:mm:ss')}"></span>
+    </p>
   </div>
 
-  <form th:action="@{/assignments/submit}" method="post" enctype="multipart/form-data">
-    <input type="hidden" name="assignmentId" th:value="${assignment.id}" />
-    <input type="hidden" name="teamId" th:value="${teamId}" />
+  <form th:action="@{/assignments/{assignmentId}/submit(assignmentId=${assignment.id})}"
+        method="post"
+        enctype="multipart/form-data">
 
-    <!-- 제출 안 했을 때 -->
-    <div th:if="${submission == null}">
-      <label for="file">제출 파일 선택</label>
-      <input type="file" id="file" name="file" required />
-      <button type="submit">제출하기</button>
-    </div>
+    <label for="file">새 파일 선택</label>
+    <input type="file" id="file" name="file" required />
 
-    <!-- 제출한 경우 -->
     <div th:if="${submission != null}">
       <div class="file-link">
         제출된 파일:
         <a th:href="@{'/assignments/download/' + ${submission.id}}"
            th:text="${submission.fileName}">다운로드</a>
       </div>
-
-      <label for="file">파일 수정</label>
-      <input type="file" id="file" name="file" required />
       <button type="submit">수정하기</button>
+    </div>
+
+    <div th:unless="${submission != null}">
+      <button type="submit">제출하기</button>
     </div>
   </form>
 </main>

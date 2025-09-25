@@ -81,6 +81,7 @@
     <div class="btn-container">
         <a class="btn-primary" th:href="@{/teams/create}">➕ 팀 만들기</a>
         <a class="btn-primary" th:href="@{/teams/join}">🡆 팀 참가</a>
+        <a class="btn-primary" th:if="${isManager}" th:href="@{/admin/users}">⚙ 관리자 페이지</a>
     </div>
 
     <section>

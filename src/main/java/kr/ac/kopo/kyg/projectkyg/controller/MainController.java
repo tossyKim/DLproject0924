@@ -1,9 +1,6 @@
 package kr.ac.kopo.kyg.projectkyg.controller;
 
-import kr.ac.kopo.kyg.projectkyg.domain.Assignment;
-import kr.ac.kopo.kyg.projectkyg.domain.Submission;
-import kr.ac.kopo.kyg.projectkyg.domain.Team;
-import kr.ac.kopo.kyg.projectkyg.domain.User;
+import kr.ac.kopo.kyg.projectkyg.domain.*;
 import kr.ac.kopo.kyg.projectkyg.repository.AssignmentRepository;
 import kr.ac.kopo.kyg.projectkyg.repository.SubmissionRepository;
 import kr.ac.kopo.kyg.projectkyg.repository.TeamRepository;
@@ -480,6 +477,70 @@ public class MainController {
         userRepository.save(user);
 
         return "redirect:/teams/{teamId}/members";
+    }
+
+    /** 관리자 페이지 (ROLE_ADMIN 전용) */
+    @GetMapping("/admin/users") // 기존 /main/admin -> /admin/users
+    public String adminPage(Model model, Authentication authentication) {
+        boolean isAdmin = authentication != null &&
+                authentication.getAuthorities().stream()
+                        .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        if (!isAdmin) {
+            throw new IllegalStateException("관리자만 접근할 수 있습니다.");
+        }
+
+        List<User> allUsers = userRepository.findAll();
+        model.addAttribute("users", allUsers);
+        return "admin_users"; // admin_users.html 반환
+    }
+
+    /** 유저 수정 처리 */
+    @PostMapping("/admin/users/update") // 기존 /main/admin/users/update -> /admin/users/update
+    @Transactional
+    public String updateUser(@RequestParam Long userId,
+                             @RequestParam String name,
+                             @RequestParam String username,
+                             @RequestParam String password,
+                             @RequestParam String role,
+                             Authentication authentication) {
+        boolean isAdmin = authentication != null &&
+                authentication.getAuthorities().stream()
+                        .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        if (!isAdmin) {
+            throw new IllegalStateException("관리자만 접근할 수 있습니다.");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalStateException("사용자를 찾을 수 없습니다."));
+
+        user.setName(name);
+        user.setUsername(username);
+        if (password != null && !password.isBlank()) {
+            user.setPassword(passwordEncoder.encode(password));
+        }
+        user.setRole(Role.valueOf(role));
+
+        userRepository.save(user);
+
+        return "redirect:/admin/users"; // 관리자 페이지로 리다이렉트
+    }
+
+    /** 유저 삭제 처리 */
+    @PostMapping("/admin/users/delete")
+    @Transactional
+    public String deleteUser(@RequestParam Long userId, Authentication authentication) {
+        boolean isAdmin = authentication != null &&
+                authentication.getAuthorities().stream()
+                        .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        if (!isAdmin) {
+            throw new IllegalStateException("관리자만 접근할 수 있습니다.");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalStateException("사용자를 찾을 수 없습니다."));
+        userRepository.delete(user);
+
+        return "redirect:/admin/users";
     }
 
 }

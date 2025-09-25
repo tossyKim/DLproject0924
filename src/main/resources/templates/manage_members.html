@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+  <meta charset="UTF-8">
+  <title th:text="${team.name} + ' 팀원 관리'">팀원 관리</title>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; background: #f7f8fa; margin: 0; padding: 0; color: #333; }
+    header { background: #3b82f6; color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+    header h1 { margin: 0; }
+    header nav a { color: white; margin-left: 1rem; text-decoration: none; font-weight: 500; }
+    main { padding: 2rem; }
+    table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; }
+    th, td { padding: 0.8rem 1rem; text-align: left; border-bottom: 1px solid #ddd; }
+    th { background: #e0e7ff; }
+    tr:hover { background: #f0f4ff; }
+    .btn-primary { background: #3b82f6; color: white; padding: 0.4rem 0.8rem; border-radius: 6px; border: none; cursor: pointer; }
+    .btn-primary:hover { background: #2563eb; }
+  </style>
+</head>
+<body>
+<header>
+  <h1 th:text="${team.name} + ' 팀원 관리'">팀원 관리</h1>
+  <nav>
+    <a th:href="@{/projects/{teamId}(teamId=${team.id})}">← 과제로 돌아가기</a>
+    <a th:href="@{/main}">메인</a>
+  </nav>
+</header>
+<main>
+  <h2>팀원 목록</h2>
+  <table>
+    <thead>
+    <tr>
+      <th>이름</th>
+      <th>사용자명</th>
+      <th>액션</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="member : ${members}">
+      <td th:text="${member.name}">이름</td>
+      <td th:text="${member.username}">아이디</td>
+      <td>
+        <form th:if="${member.username != team.managerUsername}"
+              th:action="@{/teams/{teamId}/remove(memberId=${member.id}, teamId=${team.id})}"
+              method="post"
+              onsubmit="return confirm('정말 탈퇴시키시겠습니까?');"
+              style="display:inline;">
+          <button type="submit" class="btn-primary">강퇴</button>
+        </form>
+        <span th:if="${member.username == team.managerUsername}">팀장</span>
+      </td>
+    </tr>
+    </tbody>
+  </table>
+</main>
+</body>
+</html>

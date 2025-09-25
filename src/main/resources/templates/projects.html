@@ -78,6 +78,9 @@
         <a th:if="${isCreator}" class="btn-primary"
            th:href="@{/teams/{teamId}/edit(teamId=${team.id})}">🛠 팀 정보 수정</a>
 
+        <a th:if="${isCreator}" class="btn-primary"
+           th:href="@{/teams/{teamId}/members(teamId=${team.id})}">👥 참가자 관리</a>
+
         <form th:if="${isCreator}" th:action="@{/teams/{teamId}/delete(teamId=${team.id})}" method="post" style="display:inline;"
               onsubmit="return confirm('정말 팀을 해체하시겠습니까?');">
             <button type="submit" class="btn-primary">💥 팀 해체</button>

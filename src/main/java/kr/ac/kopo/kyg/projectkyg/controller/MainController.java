@@ -441,4 +441,45 @@ public class MainController {
 
         return "project_submissions";
     }
+    /** 팀원 관리 페이지 (팀장만 접근 가능) */
+    @GetMapping("/teams/{teamId}/members")
+    public String manageMembers(@PathVariable Long teamId, Model model, Authentication authentication) {
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new IllegalStateException("팀을 찾을 수 없습니다."));
+
+        if (!authentication.getName().equals(team.getManagerUsername())) {
+            throw new IllegalStateException("팀장만 참가자를 관리할 수 있습니다.");
+        }
+
+        model.addAttribute("team", team);
+        model.addAttribute("members", team.getUsers());
+
+        return "manage_members";
+    }
+    /** 팀원 제거 (팀장만 가능) */
+    @PostMapping("/teams/{teamId}/remove")
+    @Transactional
+    public String removeMember(@RequestParam Long memberId, @PathVariable Long teamId, Authentication authentication) {
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new IllegalStateException("팀을 찾을 수 없습니다."));
+        User user = userRepository.findById(memberId)
+                .orElseThrow(() -> new IllegalStateException("사용자를 찾을 수 없습니다."));
+
+        if (!authentication.getName().equals(team.getManagerUsername())) {
+            throw new IllegalStateException("팀장만 팀원을 제거할 수 있습니다.");
+        }
+
+        if (user.getUsername().equals(team.getManagerUsername())) {
+            throw new IllegalStateException("팀장은 제거할 수 없습니다.");
+        }
+
+        team.getUsers().remove(user);
+        user.getTeams().remove(team);
+
+        teamRepository.save(team);
+        userRepository.save(user);
+
+        return "redirect:/teams/{teamId}/members";
+    }
+
 }

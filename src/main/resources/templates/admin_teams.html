@@ -27,14 +27,23 @@
     }
     input[readonly] { background-color: #f0f0f0; cursor: not-allowed; }
     input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); outline: none; }
-    .btn { padding:0.6rem 1rem; border:none; border-radius:6px; cursor:pointer; margin-right:0.4rem; font-weight: 500; transition: opacity 0.3s, transform 0.2s; min-width: 80px; }
+    .btn { padding:0.6rem 1rem; border:none; border-radius:6px; cursor:pointer; font-weight: 500; transition: opacity 0.3s, transform 0.2s; min-width: 80px; }
     .btn:hover { opacity:0.9; transform: translateY(-1px); }
     .btn:active { transform: translateY(0); }
     .btn-save { background:#10b981; color:white; }
     .btn-delete { background:#f43f5e; color:white; }
-    .action-buttons { display: flex; gap: 0.5rem; align-items: center; }
-    .delete-form { margin: 0; display: inline-block; }
-    tr > form { display: contents; }
+    .btn-cleanup { background:#ff9800; color:white; margin-top: 1rem; } /* ✨ 새로 추가된 스타일 */
+    /* 버튼을 감싸는 컨테이너 */
+    .action-buttons {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      /* 폼이 <td> 안에서 정상 작동하도록 inline-flex 사용 */
+      display: inline-flex;
+    }
+    /* 폼의 마진 제거 */
+    .action-buttons form { margin: 0; }
+    .top-actions { text-align: right; margin-bottom: 1.5rem; } /* ✨ 새로 추가된 컨테이너 */
   </style>
 </head>
 <body>
@@ -46,6 +55,11 @@
   </nav>
 </header>
 <main>
+  <div class="top-actions">
+    <form th:action="@{/admin/teams/cleanup}" method="post" onsubmit="return confirm('경고: 관리자 정보(managerName)가 \"NULL\"인 모든 팀을 영구적으로 삭제하시겠습니까?');">
+    <button type="submit" class="btn btn-cleanup">🗑️ 고아 팀 일괄 정리 (NULL)</button>
+    </form>
+  </div>
   <table>
     <thead>
     <tr>
@@ -59,43 +73,38 @@
     </thead>
     <tbody>
     <tr th:each="team : ${teams}">
-      <form th:action="@{/admin/teams/update}" method="post" style="display: contents;">
-        <!-- ID는 표시만, 수정 불가 -->
+      <form th:action="@{/admin/teams/update}" method="post">
         <td>
           <input type="text" th:value="${team.id}" readonly />
           <input type="hidden" th:name="teamId" th:value="${team.id}" />
         </td>
 
-        <!-- 팀 이름은 수정 가능 -->
         <td>
           <input type="text" th:name="name" th:value="${team.name}" />
         </td>
 
-        <!-- 설명 -->
         <td>
           <input type="text" th:name="description" th:value="${team.description}" />
         </td>
 
-        <!-- 비밀번호 변경 -->
         <td>
           <input type="password" th:name="password" placeholder="변경시 입력" />
         </td>
 
-        <!-- 팀장 -->
-        <td th:text="${team.managerName}">홍길동</td>
-
-        <!-- 저장 버튼 -->
-        <td class="action-buttons">
-          <button type="submit" class="btn btn-save">💾 저장</button>
+        <td th:text="${team.managerName}"
+            th:style="${team.managerName == 'NULL' ? 'color: #f43f5e; font-weight: bold;' : ''}">
+          홍길동
         </td>
-      </form>
 
-      <!-- 삭제 버튼 -->
-      <td>
-        <form th:action="@{/admin/teams/delete}" method="post" class="delete-form">
-          <input type="hidden" th:name="teamId" th:value="${team.id}" />
-          <button type="submit" class="btn btn-delete" onclick="return confirm('정말 삭제하시겠습니까?');">🗑 삭제</button>
-        </form>
+        <td>
+          <div class="action-buttons">
+            <button type="submit" class="btn btn-save">💾 저장</button>
+      </form>
+      <form th:action="@{/admin/teams/delete}" method="post">
+        <input type="hidden" th:name="teamId" th:value="${team.id}" />
+        <button type="submit" class="btn btn-delete" onclick="return confirm('정말 삭제하시겠습니까?');">🗑 삭제</button>
+      </form>
+      </div>
       </td>
     </tr>
     </tbody>

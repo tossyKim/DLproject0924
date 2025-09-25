@@ -63,6 +63,7 @@
         .team-name { font-weight: bold; font-size: 1.1rem; }
         .team-description { margin-top: 0.5rem; color: #666; font-size: 0.9em; line-height: 1.4; }
         .team-manager { margin-top: 0.5rem; font-weight: bold; color: #666; font-size: 0.9em; }
+        .team-deadline { margin-top: 0.5rem; font-weight: bold; color: #d97706; font-size: 0.9em; }
 
         footer { text-align: center; padding: 1rem; background: #e5e7eb; margin-top: 2rem; font-size: 0.9rem; }
     </style>
@@ -94,6 +95,11 @@
                     <span class="team-name" th:text="${team.name}">팀 이름</span>
                     <p class="team-description" th:text="${team.description}">팀 설명이 여기에 표시됩니다.</p>
                     <span class="team-manager">팀장: <span th:text="${team.managerName}">팀장</span></span>
+
+                    <!-- 마감임박 표시 -->
+                    <span class="team-deadline" th:if="${team.hoursUntilDeadline >= 0}">
+                        ⏰ <span th:text="${team.hoursUntilDeadline}"></span>시간 후 마감
+                    </span>
                 </a>
             </div>
         </div>

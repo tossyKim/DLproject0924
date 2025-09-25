@@ -6,7 +6,6 @@ import lombok.*;
 import java.util.HashSet;
 import java.util.Set;
 
-
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
@@ -38,4 +37,8 @@ public class Team {
     // 팀원과 다대다 관계 설정 (User 엔티티의 teams 필드에 의해 관리됨)
     @ManyToMany(mappedBy = "teams")
     private Set<User> users = new HashSet<>();
+
+    // 화면 표시용 필드: 가장 가까운 과제의 마감까지 남은 시간(시간 단위)
+    @Transient
+    private long hoursUntilDeadline;
 }

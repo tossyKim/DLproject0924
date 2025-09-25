@@ -21,6 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 import jakarta.transaction.Transactional;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -59,6 +60,18 @@ public class MainController {
         Optional<User> optionalUser = userRepository.findByUsername(usernameFromAuth);
         if (optionalUser.isPresent()) {
             displayName = optionalUser.get().getName();
+        }
+
+        // 각 팀의 가장 가까운 마감시간 계산
+        LocalDateTime now = LocalDateTime.now();
+        for (Team team : userTeams) {
+            List<Assignment> assignments = assignmentRepository.findByTeamId(team.getId());
+            long minHours = assignments.stream()
+                    .map(a -> Duration.between(now, a.getDeadline()).toHours())
+                    .filter(hours -> hours >= 0) // 이미 지난 마감 제외
+                    .min(Long::compare)
+                    .orElse(-1L);
+            team.setHoursUntilDeadline(minHours);
         }
 
         model.addAttribute("username", displayName);
@@ -207,7 +220,6 @@ public class MainController {
                 authentication.getName().equals(team.getManagerUsername());
         model.addAttribute("isCreator", isCreator);
 
-        // 현재 로그인 사용자가 제출한 과제인지 확인 후 Assignment 객체에 표시
         Optional<User> optionalUser = userRepository.findByUsername(username);
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
@@ -215,7 +227,7 @@ public class MainController {
                 boolean submitted = submissionRepository
                         .findByAssignmentIdAndUserId(assignment.getId(), user.getId())
                         .isPresent();
-                assignment.setSubmitted(submitted); // 새로운 필드로 제출 여부 표시
+                assignment.setSubmitted(submitted);
             }
         }
 

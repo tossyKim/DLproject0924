@@ -15,7 +15,7 @@
         main { padding: 2rem; }
 
         .btn-container { text-align: right; margin-bottom: 1rem; }
-        .btn-primary { background: #3b82f6; color: white; padding: 0.6rem 1.2rem; border-radius: 6px; text-decoration: none; font-weight: 500; transition: background 0.2s; margin-left: 0.5rem; }
+        .btn-primary { background: #3b82f6; color: white; padding: 0.6rem 1.2rem; border-radius: 6px; text-decoration: none; font-weight: 500; transition: background 0.2s; margin-left: 0.5rem; border: none; cursor: pointer; }
         .btn-primary:hover { background: #2563eb; }
 
         .project-card {
@@ -76,6 +76,17 @@
            th:href="@{/teams/{teamId}/edit(teamId=${team.id})}">
             🛠 팀 정보 수정
         </a>
+
+        <!-- 팀 해체 / 팀 탈퇴 버튼 (CSRF 없이) -->
+        <form th:if="${isCreator}" th:action="@{/teams/{teamId}/delete(teamId=${team.id})}" method="post" style="display:inline;"
+              onsubmit="return confirm('정말 팀을 해체하시겠습니까?');">
+            <button type="submit" class="btn-primary">💥 팀 해체</button>
+        </form>
+
+        <form th:unless="${isCreator}" th:action="@{/teams/{teamId}/leave(teamId=${team.id})}" method="post" style="display:inline;"
+              onsubmit="return confirm('정말 팀을 탈퇴하시겠습니까?');">
+            <button type="submit" class="btn-primary">🚪 팀 탈퇴</button>
+        </form>
     </div>
 
     <section>

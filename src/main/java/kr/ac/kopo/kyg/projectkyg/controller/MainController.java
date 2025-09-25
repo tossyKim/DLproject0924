@@ -108,6 +108,45 @@ public class MainController {
         return "redirect:/main";
     }
 
+    /** 팀 수정 페이지 */
+    @GetMapping("/teams/{id}/edit")
+    public String editTeamForm(@PathVariable Long id, Authentication authentication, Model model) {
+        Team team = teamRepository.findById(id)
+                .orElseThrow(() -> new IllegalStateException("팀을 찾을 수 없습니다."));
+
+        if (!authentication.getName().equals(team.getManagerUsername())) {
+            throw new IllegalStateException("팀장만 수정할 수 있습니다.");
+        }
+
+        model.addAttribute("team", team);
+        return "team_edit";
+    }
+
+    /** 팀 수정 처리 */
+    @Transactional
+    @PostMapping("/teams/{id}/edit")
+    public String updateTeam(@PathVariable Long id,
+                             @RequestParam String name,
+                             @RequestParam String description,
+                             @RequestParam(required = false) String password,
+                             Authentication authentication) {
+        Team team = teamRepository.findById(id)
+                .orElseThrow(() -> new IllegalStateException("팀을 찾을 수 없습니다."));
+
+        if (!authentication.getName().equals(team.getManagerUsername())) {
+            throw new IllegalStateException("팀장만 수정할 수 있습니다.");
+        }
+
+        team.setName(name);
+        team.setDescription(description);
+        if (password != null && !password.isBlank()) {
+            team.setPassword(passwordEncoder.encode(password));
+        }
+
+        teamRepository.save(team);
+        return "redirect:/projects/" + team.getId();
+    }
+
     /** 팀 가입 폼 */
     @GetMapping("/teams/join")
     public String joinTeamForm(Model model) {
@@ -275,6 +314,7 @@ public class MainController {
                         "attachment; filename=\"" + submission.getFileName() + "\"")
                 .body(new ByteArrayResource(submission.getFileData()));
     }
+
     /** 팀장용 제출물 확인 페이지 */
     @GetMapping("/projects/{teamId}/submissions")
     public String viewSubmissions(@PathVariable Long teamId,
@@ -293,7 +333,6 @@ public class MainController {
                 authentication.getName().equals(team.getManagerUsername());
 
         if (!isCreator) {
-            // 팀장이 아니면 접근 금지
             throw new IllegalStateException("팀장만 제출물을 볼 수 있습니다.");
         }
 
@@ -303,6 +342,6 @@ public class MainController {
         model.addAttribute("assignment", assignment);
         model.addAttribute("submissions", submissions);
 
-        return "project_submissions"; // 새 HTML 파일
+        return "project_submissions";
     }
 }

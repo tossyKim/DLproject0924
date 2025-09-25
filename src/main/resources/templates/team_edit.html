@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${team.name} + ' 수정'">팀 정보 수정</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f7f8fa; margin: 0; padding: 0; color: #333; }
+        header { background: #3b82f6; color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+        header h1 { margin: 0; }
+        header nav a { color: white; margin-left: 1rem; text-decoration: none; font-weight: 500; }
+        header nav a:hover { text-decoration: underline; }
+
+        main { max-width: 600px; margin: 2rem auto; background: white; padding: 2rem; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        h2 { margin-bottom: 1.5rem; text-align: center; }
+
+        form { display: flex; flex-direction: column; }
+        label { font-weight: bold; margin-top: 1rem; }
+        input, textarea {
+            margin-top: 0.5rem; padding: 0.6rem; border: 1px solid #ccc; border-radius: 6px;
+            font-size: 1rem; width: 100%; box-sizing: border-box;
+        }
+        textarea { resize: vertical; min-height: 100px; }
+
+        .btn-group { margin-top: 2rem; display: flex; justify-content: flex-end; gap: 1rem; }
+        .btn-primary { background: #3b82f6; color: white; padding: 0.6rem 1.2rem; border: none; border-radius: 6px; font-weight: 500; cursor: pointer; transition: background 0.2s; }
+        .btn-primary:hover { background: #2563eb; }
+        .btn-secondary { background: #e5e7eb; color: #333; padding: 0.6rem 1.2rem; border: none; border-radius: 6px; font-weight: 500; cursor: pointer; transition: background 0.2s; }
+        .btn-secondary:hover { background: #d1d5db; }
+
+        footer { text-align: center; padding: 1rem; background: #e5e7eb; margin-top: 2rem; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+<header>
+    <h1 th:text="${team.name} + ' 정보 수정'">팀 정보 수정</h1>
+    <nav>
+        <a th:href="@{/main}">메인</a>
+        <a th:href="@{/logout}">로그아웃</a>
+    </nav>
+</header>
+
+<main>
+    <h2>팀 정보 수정</h2>
+
+    <form th:action="@{/teams/{teamId}/edit(teamId=${team.id})}" method="post">
+        <label for="name">팀 이름</label>
+        <input type="text" id="name" name="name" th:value="${team.name}" required>
+
+        <label for="description">팀 설명</label>
+        <textarea id="description" name="description" th:text="${team.description}"></textarea>
+
+        <label for="password">팀 비밀번호</label>
+        <input type="text" id="password" name="password" th:value="${team.password}" required>
+
+        <div class="btn-group">
+            <button type="submit" class="btn-primary">저장</button>
+            <a th:href="@{/projects/{teamId}(teamId=${team.id})}" class="btn-secondary">취소</a>
+        </div>
+    </form>
+</main>
+
+<footer>
+    <p>© 2025 팀 관리 시스템</p>
+</footer>
+</body>
+</html>

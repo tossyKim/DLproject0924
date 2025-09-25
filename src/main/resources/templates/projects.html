@@ -70,6 +70,12 @@
            th:href="@{/projects/{teamId}/add(teamId=${team.id})}">
             ➕ 과제 추가
         </a>
+
+        <!-- 팀 생성자만 팀 수정 버튼 표시 -->
+        <a th:if="${isCreator}" class="btn-primary"
+           th:href="@{/teams/{teamId}/edit(teamId=${team.id})}">
+            🛠 팀 정보 수정
+        </a>
     </div>
 
     <section>

@@ -203,6 +203,7 @@ public class MainController {
     }
 
     /** 프로젝트 목록 페이지 */
+    /** 프로젝트 목록 페이지 */
     @GetMapping("/projects/{id}")
     public String projectsPage(@PathVariable Long id, Model model, Authentication authentication) {
         Team team = teamRepository.findById(id)
@@ -220,6 +221,7 @@ public class MainController {
                 authentication.getName().equals(team.getManagerUsername());
         model.addAttribute("isCreator", isCreator);
 
+        // 현재 로그인 사용자가 제출한 과제인지 확인 후 Assignment 객체에 표시
         Optional<User> optionalUser = userRepository.findByUsername(username);
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
@@ -227,15 +229,28 @@ public class MainController {
                 boolean submitted = submissionRepository
                         .findByAssignmentIdAndUserId(assignment.getId(), user.getId())
                         .isPresent();
-                assignment.setSubmitted(submitted);
+                assignment.setSubmitted(submitted); // 새로운 필드로 제출 여부 표시
             }
         }
 
+        // 현재 시간 기준으로 마감 정렬: 미마감 과제 먼저, 미마감 과제는 남은 시간 오름차순,
+        // 마감된 과제는 그 뒤로
+        LocalDateTime now = LocalDateTime.now();
+        assignments.sort((a1, a2) -> {
+            boolean a1Past = a1.getDeadline().isBefore(now);
+            boolean a2Past = a2.getDeadline().isBefore(now);
+
+            if (a1Past && !a2Past) return 1;    // a1 마감, a2 미마감 → a1 뒤로
+            if (!a1Past && a2Past) return -1;   // a1 미마감, a2 마감 → a1 앞으로
+            return a1.getDeadline().compareTo(a2.getDeadline()); // 둘 다 같은 상태이면 마감시간 순
+        });
+
         model.addAttribute("assignments", assignments);
-        model.addAttribute("now", LocalDateTime.now());
+        model.addAttribute("now", now);
 
         return "projects";
     }
+
 
     /** 팀 해체 (팀장만 가능) */
     @Transactional
